@@ -19,7 +19,7 @@
         <a href="#" class="logo"><img src="images/logo02.png" alt="logo"></a>
         <div class="user_info">
             <img src="images/2.jpg" alt="person">
-            <span>欢迎&nbsp;&nbsp;李思思</span>
+            <span>欢迎&nbsp;&nbsp; <i>李思思</i> </span>
             <b>管理员</b>
         </div>
         <div class="menu">
@@ -138,9 +138,9 @@
     //2.退出 按钮绑定点击事件
     //3.点击退出按钮 是否退出
     // 1.确定
-        //1.1 ajax发出请求
-        //1.2提示成功之后
-        //1.3去登陆页面
+    //1.1 ajax发出请求
+    //1.2提示成功之后
+    //1.3去登陆页面
     // 2否定  关闭提示框
 
     $(function () {
@@ -152,21 +152,45 @@
             $('.modal').modal()
         })
         //点击确定登出
-        $('.btn-primary').click(function(){
+        $('.btn-primary').click(function () {
             //1.1 ajax发出请求
             $.ajax({
-                url:' https://autumnfish.cn/big/admin/logout',
-                type:'post',
-                success:function(backData){
+                url: ' https://autumnfish.cn/big/admin/logout',
+                type: 'post',
+                success: function (backData) {
                     console.log(backData);
-                     //1.2提示成功之后
-                    if(backData.code == 200){
+                    //1.2提示成功之后
+                    if (backData.code == 200) {
                         //1.3去登陆页面
                         window.location.href = './login.html'
                     }
                 }
             })
+            // 2否定  关闭提示框
         })
-        // 2否定  关闭提示框
+
+        //获取用户数据
+        //步骤：
+        //请求地址：https://autumnfish.cn/big/admin/getuser
+        //请求方式：get
+        //请求参数：无
+        // 1.进入首页后
+        //2.通过ajax获得用户信息
+        //3.获得用户信息之后 再然到页面上
+        $.ajax({
+            url:'https://autumnfish.cn/big/admin/getuser',
+            type:'get',
+            success:function(backData){
+                console.log(backData);
+                //修改显示内容 图片
+                $('.user_info img').attr('src',backData.data.user_pic)
+                $('.user_center_link img').attr('src',backData.data.user_pic)
+        
+                //名字 原始需要保留 所有选择拼接字符串
+                //为精确命中认可以人为添标签
+                $('.user_info span i').html(backData.data.nickname)
+            }
+        })
+
     })
 </script>
