@@ -72,7 +72,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success btn_add" data-toggle="modal" data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -89,6 +89,8 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <!-- 隐藏的id，隐藏域 -->
+                        <input type="hidden" name="id">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">分类名称:</label>
                             <input type="text" class="form-control" id="recipient-name">
@@ -123,12 +125,12 @@
         //     $('#addModal').modal('hide');
         // });
 
-        $('.category_table').delegate('a', 'click', function () {
-            if ($(this).hasClass('btn-info')) {
-                $('#addModal .modal-title').html('修改分类名称');
-                $('#addModal').modal('show');
-            }
-        })      
+        // $('.category_table').delegate('a', 'click', function () {
+        //     if ($(this).hasClass('btn-info')) {
+        //         $('#addModal .modal-title').html('修改分类名称');
+        //         $('#addModal').modal('show');
+        //     }
+        // })      
     </script>
 
     <!-- 导入模板 -->
@@ -140,9 +142,8 @@
             <td>{{$value.name}}</td>
             <td>{{$value.slug}}</td>
             <td class="text-center">
-                <a href="javascript:editTr({&quot;id&quot;:&quot;1&quot;,&quot;slug&quot;:&quot;uncategorized&quot;,&quot;name&quot;:&quot;未分类&quot;});"
-                    class="btn btn-info btn-xs">编辑</a>
-                <a href="javascript:deleteTr( 1 );" class="btn btn-danger btn-xs">删除</a>
+                <a href='javascript:editTr({"id":"{{$value.id}}","slug":"{{$value.slug}}","name":"{{$value.name}}"});' class="btn btn-info btn-xs">编辑</a>
+                <a href="javascript:deleteTr( {{$value.id}} );" class="btn btn-danger btn-xs">删除</a>
             </td>
         </tr>
         {{/each}}
@@ -158,19 +159,6 @@
         //3.获取到数据 渲染到页面上
         //1.使用引擎模板渲染页面
 
-        $(function () {
-            $.ajax({
-                url: 'https://autumnfish.cn/big/admin/category_search',
-                type: 'get',
-                success: function (backData) {
-                    console.log(backData);
-                    //调用核心函数
-                    var html = template('temp', backData)
-                    $('tbody').html(html)
-                }
-            })
-        })
-
         //增加文章类别
         // 请求地址：https://autumnfish.cn/big/admin/category_add
 
@@ -183,33 +171,143 @@
         //2.进入增添分类后获得文本框内容
         //3.点击确定把数据发送到服务器
         //1.通过ajax把过的数据发送给服务器
+
+
+        //区分 新增和编辑
+        //  弹出的对话框中设置内容
+        //     步骤
+        //     1. 模板中可以把数据填充到 editTr这个方法中
+        //     2. 增加这个方法，定义形参获取数据
+        //     3. 把数据填充到模态框中
+
+        //  删除数据
+        //     请求地址：http://localhost:8000/admin/category_delete
+        //     请求方式：post
+        //     请求参数：
+        //     步骤
+        //     1. 实现删除a标签绑定的那个方法
+        //     2. 每次调用方法是传入这一行数据对应的id
+        //     3. 调用接口
+        //     4. 提示删除成功之后 重新获取数据（局部刷新）
+
         $(function () {
-
-            $('#model_add').click(function () {
-
-                var name = $('#recipient-name').val()
-                var slug = $('#message-text').val()
-                // console.log(recipient_name,message_text);
-                //ajsx
+            // 抽取获取数据的逻辑
+            function getCategory() { //局部刷新方法
+                //获得分类数据
                 $.ajax({
-                    url: 'https://autumnfish.cn/big/admin/category_add',
-                    type: 'post',
-                    data: {
-                        name: name,
-                        slug: slug
-                    },
+                    url: 'https://autumnfish.cn/big/admin/category_search',
+                    type: 'get',
                     success: function (backData) {
                         console.log(backData);
+                        var html = template('temp', backData)
+                        $('tbody').html(html)
+
+                    }
+                })
+            }
+
+            window.editTr = function (data) {
+                console.log(data);
+                //挨个设置数据
+                for (const key in data) {
+                    $('input[name = ' + key + ']').val(data[key])
+                }
+            }
+
+            // 删除的方法
+            window.deleteTr = function (id) {
+                // 调用接口
+                $.ajax({
+                    url: 'https://autumnfish.cn/big/admin/category_delete',
+                    type: 'post',
+                    data: {
+                        id: id
+                    },
+                    success: function (backData) {
+                        // console.log(backData)
                         if (backData.code == 200) {
-                            alert('添加成功');
-                            //弹框
-                            $('#addModal').modal('hide');
+                            // 局部刷新
+                            getCategory()
                         }
                     }
                 })
+            }
 
+            //默认调用一次
+            getCategory()
+
+
+
+            //新增文章类别
+            //点击增添  同时整合到编辑功能
+            $('#model_add').click(function () {
+
+                console.log($('form').serialize());
+                if ($(this).hasClass('btn-success')) {
+                    //编辑
+                    //获得数据
+                    $.ajax({
+                        url: 'https://autumnfish.cn/big/admin/category_edit',
+                        type: 'post',
+                        data: $('form').serialize(),
+                        success: function (backData) {
+                            console.log(backData)
+                            getCategory()
+                        }
+                    })
+                } else {
+                    //新增
+                    var name = $('#recipient-name').val()
+                    var slug = $('#message-text').val()
+                    // console.log(recipient_name,message_text);
+                    //ajsx
+                    $.ajax({
+                        url: 'https://autumnfish.cn/big/admin/category_add',
+                        type: 'post',
+                        data: {
+                            name:name,
+                            slug:slug
+                        },
+                        success: function (backData) {
+                            console.log(backData);
+                            if (backData.code == 200) {
+                                //再一次调用
+                                getCategory()
+
+                            }
+                        }
+                    })
+
+                }
+                //隐藏弹框
+                $('#addModal').modal('hide');
             })
+
+            //编辑文章类别
+
+            //新增框点击事件
+            $('.btn_add').click(function () {
+                //顶部
+                $('.modal-title').text('新增分类')
+                // 按钮
+                $('#model_add')
+                    .text('新增')
+                    .removeClass('btn-success')
+            })
+
+            //弹出编辑框事件
+            $('.category_table').on('click', 'a.btn-info', function () {
+                //顶部
+                $('#addModal .modal-title').html('修改分类名称');
+                //按钮
+                $('#model_add')
+                    .text('修改')
+                    .addClass('btn-success')
+                $('#addModal').modal('show')
+            })
+
         })
+
     </script>
 
 </body>
